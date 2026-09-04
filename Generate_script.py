@@ -106,7 +106,9 @@ def main():
     items = load_news()
     try:
         result = generate_script_anthropic(items)
-    except (anthropic.APIError, anthropic.APIConnectionError) as e:
+    except Exception as e:
+        # Qualquer falha na Anthropic (API, rede, credencial ausente/inválida)
+        # cai pro Gemini — não só erros de API.
         print(f"Chamada à Anthropic falhou ({e}); usando Gemini como fallback.", file=sys.stderr)
         result = generate_script_gemini(items)
 
