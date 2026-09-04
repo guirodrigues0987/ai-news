@@ -29,9 +29,9 @@ def load_script(path: str = "roteiro.json") -> str:
     return data["script"]
 
 
-def generate_audio(script: str) -> None:
+def generate_audio(script: str) -> str:
     client = ElevenLabs(api_key=os.environ["ELEVENLABS_API_KEY"])
-    voice_id = os.environ.get("ELEVENLABS_VOICE_ID", DEFAULT_VOICE_ID)
+    voice_id = os.environ.get("ELEVENLABS_VOICE_ID") or DEFAULT_VOICE_ID
 
     audio = client.text_to_speech.convert(
         voice_id=voice_id,
@@ -46,12 +46,13 @@ def generate_audio(script: str) -> None:
     save(audio, output_path)
 
     print(f"Áudio gerado em: {output_path}")
+    return output_path
 
 
-def main():
+def main() -> str:
     script = load_script()
     try:
-        generate_audio(script)
+        return generate_audio(script)
     except ApiError as e:
         print(f"Falha ao gerar áudio na ElevenLabs: {e}")
         raise

@@ -81,18 +81,25 @@ def generate_script_anthropic(items: list[dict]) -> dict:
     return json.loads(text)
 
 
-def generate_script_gemini(items: list[dict]) -> dict:
-    """Fallback (não-Anthropic): Gemini free tier, usado só se a chamada acima falhar."""
-    import google.generativeai as genai
+GEMINI_MODEL = "gemini-3.8-flash"
 
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    model = genai.GenerativeModel(
-        "gemini-2.0-flash",
+
+def generate_script_gemini(items: list[dict]) -> dict:
+    """Fallback (não-Anthropic): Gemini, usado só se a chamada acima falhar."""
+    from google import genai
+
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    interaction = client.interactions.create(
+        model=GEMINI_MODEL,
         system_instruction=SYSTEM_PROMPT,
-        generation_config={"response_mime_type": "application/json"},
+        input=build_user_content(items),
+        response_format={
+            "type": "text",
+            "mime_type": "application/json",
+            "schema": SCRIPT_SCHEMA,
+        },
     )
-    result = model.generate_content(build_user_content(items))
-    return json.loads(result.text)
+    return json.loads(interaction.output_text)
 
 
 def main():

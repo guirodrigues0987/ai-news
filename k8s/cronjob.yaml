@@ -1,8 +1,10 @@
 # CronJob do podcast de notícias de IA. Roda todo dia às 6h (horário de
-# Brasília). Começa "suspend: true" — só ative depois que o Secret
-# "ai-news-secrets" existir no namespace "ai-news". Imagem vem do Docker
-# Hub (repo privado guilhermerodrigues00/ai_agent), puxada via o
-# imagePullSecret "dockerhub-creds".
+# Brasília). Imagem vem do Docker Hub (repo privado
+# guilhermerodrigues00/ai_agent), puxada via o imagePullSecret
+# "dockerhub-creds". Os episódios são gravados via hostPath em
+# /home/home_lab/ai-news/output — cluster de nó único, então dá pra
+# acessar os mp3 direto pelo gerenciador de arquivos, sem precisar de
+# sudo nem de "kubectl cp".
 apiVersion: batch/v1
 kind: CronJob
 metadata:
