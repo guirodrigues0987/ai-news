@@ -1,0 +1,47 @@
+# CronJob do podcast de notícias de IA. Roda todo dia às 6h (horário de
+# Brasília). Começa "suspend: true" — só ative depois que o Secret
+# "ai-news-secrets" existir no namespace "ai-news". Imagem vem do Docker
+# Hub (repo privado guilhermerodrigues00/ai_agent), puxada via o
+# imagePullSecret "dockerhub-creds".
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ai-news-podcast
+  namespace: ai-news
+spec:
+  schedule: "0 6 * * *"
+  timeZone: "America/Sao_Paulo"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: dockerhub-creds
+          containers:
+            - name: ai-news-podcast
+              image: guilhermerodrigues00/ai_agent:latest
+              imagePullPolicy: Always
+              envFrom:
+                - secretRef:
+                    name: ai-news-secrets
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"
+              volumeMounts:
+                - name: output
+                  mountPath: /app/output
+          volumes:
+            - name: output
+              persistentVolumeClaim:
+                claimName: ai-news-output

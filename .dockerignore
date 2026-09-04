@@ -1,0 +1,9 @@
+.env
+.git
+.gitignore
+__pycache__/
+*.pyc
+k8s/
+output/
+news_raw.json
+roteiro.json
