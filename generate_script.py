@@ -1,9 +1,8 @@
 """
-Passo 2: Filtro de relevância + geração de roteiro via LLM
-Lê news_raw.json (saída do fetch_news.py), filtra os itens por relevância,
-remove duplicatas semânticas e escreve um roteiro de podcast em tom de
-apresentador — via API da Anthropic, com fallback para Gemini se a chamada
-principal falhar.
+Step 2: Relevance filtering + script generation via LLM
+Reads news_raw.json (output of fetch_news.py), filters items by relevance,
+removes semantic duplicates and writes a presenter-style podcast script
+using the Anthropic API, falling back to Gemini if the primary call fails.
 """
 
 import json
@@ -39,20 +38,20 @@ SCRIPT_SCHEMA = {
     "additionalProperties": False,
 }
 
-SYSTEM_PROMPT = """Você é o apresentador de um podcast diário sobre notícias de \
-Inteligência Artificial. Você recebe uma lista de itens (Hacker News + RSS de \
-blogs oficiais) e deve:
+# The podcast itself is narrated in Brazilian Portuguese; the prompt is in English.
+SYSTEM_PROMPT = """You are the host of a daily podcast about Artificial Intelligence \
+news. You receive a list of items (Hacker News + RSS from official blogs) and must:
 
-1. Selecionar apenas os itens realmente relevantes para quem acompanha IA de \
-perto (pesquisadores, engenheiros, entusiastas) — descarte itens fracos, \
-clickbait ou sem substância técnica/estratégica.
-2. Remover duplicatas semânticas (itens diferentes cobrindo a mesma notícia), \
-mantendo o de fonte mais confiável ou mais completa.
-3. Escrever um roteiro de podcast em português, em tom de apresentador \
-explicando as notícias com contexto e opinião leve — não é um resumo seco, \
-é uma conversa envolvente, com abertura curta e fechamento.
+1. Select only the items that are truly relevant to people who follow AI closely \
+(researchers, engineers, enthusiasts) - discard weak items, clickbait, or items \
+without technical/strategic substance.
+2. Remove semantic duplicates (different items covering the same story), keeping \
+the most reliable or most complete source.
+3. Write a podcast script in Brazilian Portuguese, in a host's voice explaining \
+the news with context and light opinion - not a dry summary, but an engaging \
+conversation with a short opening and closing.
 
-Responda apenas com os dados estruturados pedidos."""
+Respond only with the requested structured data."""
 
 
 def load_news(path: str = "news_raw.json") -> list[dict]:
@@ -61,7 +60,7 @@ def load_news(path: str = "news_raw.json") -> list[dict]:
 
 
 def build_user_content(items: list[dict]) -> str:
-    return f"Itens coletados:\n{json.dumps(items, ensure_ascii=False, indent=2)}"
+    return f"Collected items:\n{json.dumps(items, ensure_ascii=False, indent=2)}"
 
 
 def generate_script_anthropic(items: list[dict]) -> dict:
@@ -85,7 +84,7 @@ GEMINI_MODEL = "gemini-3.8-flash"
 
 
 def generate_script_gemini(items: list[dict]) -> dict:
-    """Fallback (não-Anthropic): Gemini, usado só se a chamada acima falhar."""
+    """Non-Anthropic fallback: Gemini, used only if the call above fails."""
     from google import genai
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
@@ -107,17 +106,17 @@ def main():
     try:
         result = generate_script_anthropic(items)
     except Exception as e:
-        # Qualquer falha na Anthropic (API, rede, credencial ausente/inválida)
-        # cai pro Gemini — não só erros de API.
-        print(f"Chamada à Anthropic falhou ({e}); usando Gemini como fallback.", file=sys.stderr)
+        # Any Anthropic failure (API, network, missing/invalid credential)
+        # falls back to Gemini - not just API errors.
+        print(f"Anthropic call failed ({e}); falling back to Gemini.", file=sys.stderr)
         result = generate_script_gemini(items)
 
-    output_path = "roteiro.json"
+    output_path = "script.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    print(f"Roteiro gerado com {len(result['selected_items'])} itens selecionados.")
-    print(f"Salvo em: {output_path}")
+    print(f"Script generated with {len(result['selected_items'])} selected items.")
+    print(f"Saved to: {output_path}")
 
 
 if __name__ == "__main__":

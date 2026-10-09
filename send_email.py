@@ -1,6 +1,6 @@
 """
-Passo 4: Envio do episódio por e-mail
-Envia o mp3 gerado (Generate_audio.py) como anexo, via SMTP do Gmail.
+Step 4: Episode email delivery
+Sends the generated mp3 (generate_audio.py) as an attachment via Gmail SMTP.
 """
 
 import os
@@ -19,7 +19,7 @@ OUTPUT_DIR = "output"
 def latest_mp3(output_dir: str = OUTPUT_DIR) -> str:
     mp3s = [f for f in os.listdir(output_dir) if f.endswith(".mp3")]
     if not mp3s:
-        raise FileNotFoundError(f"Nenhum .mp3 encontrado em {output_dir}/")
+        raise FileNotFoundError(f"No .mp3 found in {output_dir}/")
     mp3s.sort(key=lambda f: os.path.getmtime(os.path.join(output_dir, f)))
     return os.path.join(output_dir, mp3s[-1])
 
@@ -30,10 +30,10 @@ def send_podcast_email(audio_path: str) -> None:
     recipient = os.environ.get("EMAIL_RECIPIENT") or sender
 
     msg = EmailMessage()
-    msg["Subject"] = "Seu podcast diário de notícias de IA"
+    msg["Subject"] = "Your daily AI news podcast"
     msg["From"] = sender
     msg["To"] = recipient
-    msg.set_content("Segue em anexo o episódio de hoje. Bom ouvir!")
+    msg.set_content("Today's episode is attached. Enjoy!")
 
     with open(audio_path, "rb") as f:
         msg.add_attachment(
@@ -47,7 +47,7 @@ def send_podcast_email(audio_path: str) -> None:
         smtp.login(sender, password)
         smtp.send_message(msg)
 
-    print(f"E-mail enviado para {recipient} com {os.path.basename(audio_path)}")
+    print(f"Email sent to {recipient} with {os.path.basename(audio_path)}")
 
 
 def main(audio_path: str | None = None) -> None:

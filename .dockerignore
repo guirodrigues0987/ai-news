@@ -6,4 +6,4 @@ __pycache__/
 k8s/
 output/
 news_raw.json
-roteiro.json
+script.json

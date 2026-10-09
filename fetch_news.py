@@ -1,23 +1,37 @@
 """
-Passo 1: Coleta de notícias sobre IA
-Fontes: Hacker News (API pública) + RSS de blogs oficiais (OpenAI, Anthropic, Google DeepMind)
+Step 1: AI news collection
+Sources: Hacker News (public API) + RSS feeds from official blogs
+(OpenAI, Anthropic, Google DeepMind)
 
-Objetivo: trazer os itens mais recentes/relevantes sobre IA das últimas 24-48h,
-sem duplicatas, num formato estruturado (JSON) pra alimentar o próximo passo
-(filtragem por relevância + geração do roteiro do podcast).
+Goal: gather the most recent/relevant AI items from the last 24-48h,
+without duplicates, in a structured format (JSON) to feed the next step
+(relevance filtering + podcast script generation).
 """
 
-import requests
-import feedparser
-from datetime import datetime, timedelta, timezone
 import json
+from datetime import UTC, datetime, timedelta
 
-# Palavras-chave simples pra filtrar o que é relevante em IA
-# (na próxima etapa, isso vira um filtro feito pelo próprio LLM, mais inteligente)
+import feedparser
+import requests
+
+# Simple keywords to pre-filter what is relevant to AI
+# (the next step refines this with an LLM-based filter)
 AI_KEYWORDS = [
-    "ai", "artificial intelligence", "llm", "gpt", "claude", "gemini",
-    "openai", "anthropic", "deepmind", "machine learning", "neural network",
-    "transformer", "chatbot", "generative ai", "agent"
+    "ai",
+    "artificial intelligence",
+    "llm",
+    "gpt",
+    "claude",
+    "gemini",
+    "openai",
+    "anthropic",
+    "deepmind",
+    "machine learning",
+    "neural network",
+    "transformer",
+    "chatbot",
+    "generative ai",
+    "agent",
 ]
 
 RSS_FEEDS = {
@@ -36,13 +50,13 @@ def is_ai_related(text: str) -> bool:
 
 
 def fetch_hn_ai_stories(max_stories_to_check=150, hours_window=48):
-    """Busca as top stories do Hacker News e filtra as relacionadas a IA."""
-    print("Buscando stories no Hacker News...")
+    """Fetch Hacker News top stories and keep the AI-related ones."""
+    print("Fetching Hacker News stories...")
     resp = requests.get(HN_TOP_STORIES_URL, timeout=10)
     resp.raise_for_status()
     story_ids = resp.json()[:max_stories_to_check]
 
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_window)
+    cutoff = datetime.now(UTC) - timedelta(hours=hours_window)
     results = []
 
     for story_id in story_ids:
@@ -56,7 +70,7 @@ def fetch_hn_ai_stories(max_stories_to_check=150, hours_window=48):
             continue
 
         title = item.get("title", "")
-        story_time = datetime.fromtimestamp(item.get("time", 0), tz=timezone.utc)
+        story_time = datetime.fromtimestamp(item.get("time", 0), tz=UTC)
 
         if story_time < cutoff:
             continue
@@ -64,30 +78,32 @@ def fetch_hn_ai_stories(max_stories_to_check=150, hours_window=48):
         if not is_ai_related(title):
             continue
 
-        results.append({
-            "source": "Hacker News",
-            "title": title,
-            "url": item.get("url", f"https://news.ycombinator.com/item?id={story_id}"),
-            "published": story_time.isoformat(),
-            "score": item.get("score", 0),
-            "raw_id": story_id,
-        })
+        results.append(
+            {
+                "source": "Hacker News",
+                "title": title,
+                "url": item.get("url", f"https://news.ycombinator.com/item?id={story_id}"),
+                "published": story_time.isoformat(),
+                "score": item.get("score", 0),
+                "raw_id": story_id,
+            }
+        )
 
-    print(f"  -> {len(results)} stories relevantes encontradas.")
+    print(f"  -> {len(results)} relevant stories found.")
     return results
 
 
 def fetch_rss_ai_posts(hours_window=48):
-    """Busca posts recentes dos blogs oficiais via RSS."""
-    print("Buscando posts nos blogs oficiais (RSS)...")
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours_window)
+    """Fetch recent posts from the official blogs via RSS."""
+    print("Fetching posts from official blogs (RSS)...")
+    cutoff = datetime.now(UTC) - timedelta(hours=hours_window)
     results = []
 
     for source_name, feed_url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(feed_url)
         except Exception as e:
-            print(f"  Aviso: falha ao ler feed de {source_name}: {e}")
+            print(f"  Warning: failed to read feed from {source_name}: {e}")
             continue
 
         for entry in feed.entries:
@@ -95,25 +111,27 @@ def fetch_rss_ai_posts(hours_window=48):
             if not published_struct:
                 continue
 
-            published_dt = datetime(*published_struct[:6], tzinfo=timezone.utc)
+            published_dt = datetime(*published_struct[:6], tzinfo=UTC)
             if published_dt < cutoff:
                 continue
 
-            results.append({
-                "source": source_name,
-                "title": entry.get("title", ""),
-                "url": entry.get("link", ""),
-                "published": published_dt.isoformat(),
-                "score": None,
-                "raw_id": entry.get("id", entry.get("link", "")),
-            })
+            results.append(
+                {
+                    "source": source_name,
+                    "title": entry.get("title", ""),
+                    "url": entry.get("link", ""),
+                    "published": published_dt.isoformat(),
+                    "score": None,
+                    "raw_id": entry.get("id", entry.get("link", "")),
+                }
+            )
 
-    print(f"  -> {len(results)} posts encontrados nos blogs.")
+    print(f"  -> {len(results)} blog posts found.")
     return results
 
 
 def deduplicate(items):
-    """Remove duplicatas simples por título muito parecido (normalizado)."""
+    """Drop simple duplicates by normalized title."""
     seen_titles = set()
     unique = []
     for item in items:
@@ -136,8 +154,8 @@ def main():
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_items, f, ensure_ascii=False, indent=2)
 
-    print(f"\nTotal final (sem duplicatas): {len(all_items)} itens.")
-    print(f"Salvo em: {output_path}")
+    print(f"\nFinal total (deduplicated): {len(all_items)} items.")
+    print(f"Saved to: {output_path}")
 
 
 if __name__ == "__main__":
