@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 output/
 news_raw.json
-roteiro.json
+script.json

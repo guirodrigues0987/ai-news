@@ -1,12 +1,12 @@
 """
-Passo 3: Geração de áudio via TTS
-Lê roteiro.json (saída do Generate_script.py) e converte o campo "script"
-em um arquivo de podcast (mp3) usando a API da ElevenLabs.
+Step 3: Audio generation via TTS
+Reads script.json (output of generate_script.py) and converts the "script"
+field into a podcast file (mp3) using the ElevenLabs API.
 """
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 from elevenlabs import ElevenLabs, save
@@ -14,16 +14,16 @@ from elevenlabs.core import ApiError
 
 load_dotenv()
 
-# Voz padrão (multilíngue, boa qualidade). Para trocar, rode uma busca de
-# vozes (client.voices.search(language="pt")) e defina ELEVENLABS_VOICE_ID
-# no .env com o voice_id escolhido.
+# Default voice (multilingual, good quality). To change it, search voices
+# (client.voices.search(language="pt")) and set ELEVENLABS_VOICE_ID in .env
+# to the chosen voice_id.
 DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
 MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_FORMAT = "mp3_44100_128"
 OUTPUT_DIR = "output"
 
 
-def load_script(path: str = "roteiro.json") -> str:
+def load_script(path: str = "script.json") -> str:
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     return data["script"]
@@ -41,11 +41,11 @@ def generate_audio(script: str) -> str:
     )
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     output_path = os.path.join(OUTPUT_DIR, f"podcast_{timestamp}.mp3")
     save(audio, output_path)
 
-    print(f"Áudio gerado em: {output_path}")
+    print(f"Audio generated at: {output_path}")
     return output_path
 
 
@@ -54,7 +54,7 @@ def main() -> str:
     try:
         return generate_audio(script)
     except ApiError as e:
-        print(f"Falha ao gerar áudio na ElevenLabs: {e}")
+        print(f"Failed to generate audio with ElevenLabs: {e}")
         raise
 
 

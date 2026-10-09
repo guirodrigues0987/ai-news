@@ -1,36 +1,36 @@
 """
-Orquestrador do pipeline completo do podcast de notícias de IA:
-coleta (Fetch_news) -> filtro + roteiro via LLM (Generate_script) ->
-áudio via TTS (Generate_audio) -> envio por e-mail (Send_email).
+End-to-end orchestrator for the AI news podcast pipeline:
+collection (fetch_news) -> LLM filtering + script (generate_script) ->
+TTS audio (generate_audio) -> email delivery (send_email).
 """
 
 import sys
 
-import Fetch_news
-import Generate_script
-import Generate_audio
-import Send_email
+import fetch_news
+import generate_audio
+import generate_script
+import send_email
 
 
 def main():
-    print("=== Etapa 1/4: coleta de notícias ===")
-    Fetch_news.main()
+    print("=== Step 1/4: news collection ===")
+    fetch_news.main()
 
-    print("\n=== Etapa 2/4: filtro + roteiro (LLM) ===")
-    Generate_script.main()
+    print("\n=== Step 2/4: filtering + script (LLM) ===")
+    generate_script.main()
 
-    print("\n=== Etapa 3/4: geração de áudio (TTS) ===")
-    audio_path = Generate_audio.main()
+    print("\n=== Step 3/4: audio generation (TTS) ===")
+    audio_path = generate_audio.main()
 
-    print("\n=== Etapa 4/4: envio por e-mail ===")
-    Send_email.main(audio_path)
+    print("\n=== Step 4/4: email delivery ===")
+    send_email.main(audio_path)
 
-    print("\nPipeline concluído.")
+    print("\nPipeline finished.")
 
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"Pipeline falhou: {e}", file=sys.stderr)
+        print(f"Pipeline failed: {e}", file=sys.stderr)
         sys.exit(1)
